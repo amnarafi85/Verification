@@ -3,9 +3,23 @@ import { supabase } from "../supabaseClient";
 import Papa from "papaparse";
 import "./AdminCertificates.css"; // ✅ external CSS
 
+// ✅ Strong typing for a certificate row
+interface Certificate {
+  id?: string;
+  student_name: string;
+  student_email: string;
+  course_name: string;
+  course_duration: string;
+  completion_status: string;
+  badge_url: string;
+  serial_number: string;
+  created_at?: string;
+  [key: string]: any; // allows dynamic indexing like row[field]
+}
+
 export default function AdminCertificates() {
-  const [certificates, setCertificates] = useState<any[]>([]);
-  const [form, setForm] = useState({
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [form, setForm] = useState<Certificate>({
     id: "",
     student_name: "",
     course_name: "",
@@ -24,7 +38,7 @@ export default function AdminCertificates() {
   const [showCertificates, setShowCertificates] = useState(false);
 
   // ✅ Built-in CSV-like editor
-  const [tableRows, setTableRows] = useState([
+  const [tableRows, setTableRows] = useState<Certificate[]>([
     {
       student_name: "",
       student_email: "",
@@ -45,7 +59,7 @@ export default function AdminCertificates() {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (!error && data) setCertificates(data);
+    if (!error && data) setCertificates(data as Certificate[]);
   };
 
   useEffect(() => {
@@ -68,7 +82,7 @@ export default function AdminCertificates() {
     e.preventDefault();
     setLoading(true);
 
-    const cleanedForm = {
+    const cleanedForm: Certificate = {
       student_name: form.student_name.trim(),
       course_name: form.course_name.trim(),
       course_duration: form.course_duration.trim(),
@@ -112,7 +126,7 @@ export default function AdminCertificates() {
   };
 
   // ✅ Edit certificate
-  const handleEdit = (cert: any) => {
+  const handleEdit = (cert: Certificate) => {
     setForm(cert);
     setEditing(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -141,11 +155,11 @@ export default function AdminCertificates() {
 
     setBulkLoading(true);
 
-    Papa.parse(file, {
+    Papa.parse<Certificate>(file, {
       header: true,
       skipEmptyLines: true,
       complete: async (results) => {
-        const rows = results.data as any[];
+        const rows = results.data as Certificate[];
 
         const cleanedRows = rows.map((row) => ({
           student_name: row.student_name?.trim() || "",
@@ -175,9 +189,7 @@ export default function AdminCertificates() {
     });
   };
 
-  // ===============================
   // ✅ Download CSV Template
-  // ===============================
   const downloadTemplate = () => {
     const headers = [
       "student_name",
@@ -256,9 +268,7 @@ export default function AdminCertificates() {
     }
   };
 
-  // ===============================
   // ✅ Search Filter
-  // ===============================
   const filteredCertificates = certificates.filter(
     (c) =>
       c.student_name.toLowerCase().includes(search.toLowerCase()) ||
@@ -463,7 +473,10 @@ export default function AdminCertificates() {
                     <button onClick={() => handleEdit(c)} className="add">
                       Edit
                     </button>
-                    <button onClick={() => handleDelete(c.id)} className="delete">
+                    <button
+                      onClick={() => handleDelete(c.id!)}
+                      className="delete"
+                    >
                       Delete
                     </button>
                   </td>
