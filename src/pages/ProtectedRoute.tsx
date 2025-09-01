@@ -1,27 +1,18 @@
-import React, { useEffect, useState } from "react";
-import { supabase } from "../supabaseClient";
+import React from "react";
 import { Navigate } from "react-router-dom";
 
-type ProtectedRouteProps = {
-  children: React.ReactNode;
+interface ProtectedRouteProps {
+  children: JSX.Element;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  const isAdminLoggedIn = !!localStorage.getItem("adminToken"); // example auth check
+
+  if (!isAdminLoggedIn) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  return children;
 };
 
-export default function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: string, session: any) => {
-      setIsAuthenticated(!!session);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  if (loading) return <div>Loading...</div>;
-
-  return isAuthenticated ? <>{children}</> : <Navigate to="/admin" />;
-}
+export default ProtectedRoute;
